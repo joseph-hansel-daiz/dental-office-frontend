@@ -4,6 +4,7 @@ export const PATHS = {
   REGISTER: "/register",
   PROFILE: "/profile",
   SCHEDULE: "/schedule",
+  RESCHEDULE: "/reschedule",
   MANAGE: "/manage",
 };
 

@@ -2,10 +2,13 @@
 
 import AppointmentCreationModal from "@/components/AppointmentCreationModal";
 import DentistList from "@/components/DentistList";
-import { AppointmentFormValues, Dentist, Service, Slot } from "@/lib/types";
+import { useReschedule } from "@/context/RescheduleContext";
+import { AppointmentFormValues, Dentist } from "@/lib/types";
 import { useEffect, useState } from "react";
 
-export default function SchedulePage() {
+export default function ReschedulePage() {
+  const { appointment } = useReschedule();
+
   const [selectedDentist, setSelectedDentist] = useState<Dentist | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dentists, setDentists] = useState<Dentist[]>([]);
@@ -22,13 +25,11 @@ export default function SchedulePage() {
       if (!res.ok) throw new Error("Failed to fetch dentists");
       const dentistsJson = await res.json();
       setDentists(
-        dentistsJson.map((dentist: any) => {
-          return {
-            id: dentist.id,
-            name: dentist.name,
-            services: dentist.services,
-          };
-        })
+        dentistsJson.map((dentist: any) => ({
+          id: dentist.id,
+          name: dentist.name,
+          services: dentist.services,
+        }))
       );
     } catch (err) {
       console.error(err);
@@ -74,20 +75,50 @@ export default function SchedulePage() {
 
   return (
     <div className="container py-4">
-      <h1 className="text-center">Schedule an appointment</h1>
-      <DentistList
-        dentists={dentists}
-        loading={loading}
-        onCheckAvailability={openModal}
-      ></DentistList>
+      <h1 className="text-center mb-4">Reschedule an Appointment</h1>
 
-      {/* Availability Modal */}
-      {isModalOpen && (
-        <AppointmentCreationModal
-          dentist={selectedDentist}
-          onClose={closeModal}
-          onSubmit={onSubmit}
-        />
+      {/* Current Appointment Details */}
+      {appointment ? (
+        <>
+          <div className="card shadow-sm p-3 mb-4">
+            <h5 className="card-title">
+              {appointment.slot.schedule.dentist.name}
+            </h5>
+            <p className="mb-1">
+              <strong>Date:</strong>{" "}
+              {new Date(appointment.slot.schedule.date).toLocaleDateString()}
+            </p>
+            <p className="mb-1">
+              <strong>Time:</strong> {appointment.slot.slot_option.name}
+            </p>
+            <p className="mb-1">
+              <strong>Service:</strong> {appointment.service.name}
+            </p>
+            {appointment.notes && (
+              <p className="mb-0">
+                <strong>Notes:</strong> {appointment.notes}
+              </p>
+            )}
+          </div>
+          {/* Dentist list */}
+          <DentistList
+            dentists={dentists}
+            loading={loading}
+            onCheckAvailability={openModal}
+          />
+
+          {/* Availability Modal */}
+          {isModalOpen && (
+            <AppointmentCreationModal
+              dentist={selectedDentist}
+              onClose={closeModal}
+              onSubmit={onSubmit}
+              submitLabel="Reschedule Appointment"
+            />
+          )}
+        </>
+      ) : (
+        <p className="text-muted">No appointment selected.</p>
       )}
     </div>
   );

@@ -1,11 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Appointment } from "@/lib/types";
+import { PATHS } from "@/lib/constants";
+import { useReschedule } from "@/context/RescheduleContext";
+import AppointmentUpdateModal from "@/components/AppointmentUpdateModal";
 
 export default function ManagePage() {
+  const router = useRouter();
+  const { setAppointment } = useReschedule();
+
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<Appointment | null>(null);
 
   useEffect(() => {
     fetchClientAppointments();
@@ -29,11 +39,27 @@ export default function ManagePage() {
   };
 
   const handleReschedule = (appointment: Appointment) => {
-    // TODO: Show your DentistAvailabilityModal in "reschedule" mode
-    console.log("Reschedule appointment:", appointment.slot.id);
+    setAppointment(appointment);
+    router.push(PATHS.RESCHEDULE);
+    return;
   };
 
-  const handleCancel = async (appointmentId: number) => {
+  const closeUpdateModal = () => {
+    setIsUpdateModalOpen(false);
+  };
+
+  const onSubmit = () => {
+    //
+    return;
+  };
+
+  const handleUpdateButtonClick = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setIsUpdateModalOpen(true);
+    return;
+  };
+
+  const handleCancelButtonClick = async (appointmentId: number) => {
     if (!confirm("Are you sure you want to cancel this appointment?")) return;
 
     try {
@@ -122,8 +148,14 @@ export default function ManagePage() {
               Reschedule
             </button>
             <button
+              className="btn btn-sm btn-primary"
+              onClick={() => handleUpdateButtonClick(appointment)}
+            >
+              Update
+            </button>
+            <button
               className="btn btn-sm btn-danger"
-              onClick={() => handleCancel(appointment.slot.id)}
+              onClick={() => handleCancelButtonClick(appointment.slot.id)}
             >
               Cancel
             </button>
@@ -156,6 +188,15 @@ export default function ManagePage() {
               <p>No past appointments.</p>
             )}
           </div>
+
+          {/* Availability Modal */}
+          {isUpdateModalOpen && (
+            <AppointmentUpdateModal
+              appointment={selectedAppointment}
+              onClose={closeUpdateModal}
+              onSubmit={onSubmit}
+            />
+          )}
         </>
       )}
     </div>

@@ -9,7 +9,7 @@ import {
 } from "@/lib/types";
 import { JSX, useEffect, useState } from "react";
 
-export default function DentistAvailabilityModal({
+export default function AppointmentCreationModal({
   dentist,
   onClose,
   onSubmit,

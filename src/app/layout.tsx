@@ -4,6 +4,7 @@ import LayoutClient from "@/components/LayoutClient";
 import BootstrapClient from "@/lib/bootstrapClient";
 import { AuthProvider } from "@/context/AuthContext";
 import RouteGuard from "@/lib/RouteGuard";
+import { RescheduleProvider } from "@/context/RescheduleContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,9 +33,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <RouteGuard>
-            <LayoutClient>{children}</LayoutClient>
-          </RouteGuard>
+          <RescheduleProvider>
+            <RouteGuard>
+              <LayoutClient>{children}</LayoutClient>
+            </RouteGuard>
+          </RescheduleProvider>
         </AuthProvider>
         <BootstrapClient />
       </body>
