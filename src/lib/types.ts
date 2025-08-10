@@ -21,7 +21,6 @@ export interface SlotOption {
 }
 
 export interface Appointment {
-  id: number;
   slot: Slot;
   client: Client;
   service: Service;
