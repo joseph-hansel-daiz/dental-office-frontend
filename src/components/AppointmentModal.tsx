@@ -1,5 +1,6 @@
 "use client";
 
+import { authRequest } from "@/lib/api";
 import {
   AppointmentFormValues,
   Dentist,
@@ -7,8 +8,8 @@ import {
   Service,
   Slot,
 } from "@/lib/types";
-import { authRequest } from "@/lib/api";
 import { JSX, useEffect, useState } from "react";
+import Loading from "./Loading";
 
 export default function AppointmentModal({
   dentist,
@@ -186,7 +187,7 @@ export default function AppointmentModal({
       </div>
 
       {loading ? (
-        <div className="text-center py-5">Loading availability...</div>
+        <Loading></Loading>
       ) : loadError ? (
         <div className="alert alert-danger" role="alert">
           {loadError}

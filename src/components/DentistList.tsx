@@ -1,4 +1,5 @@
 import { Dentist } from "@/lib/types";
+import Loading from "./Loading";
 
 export default function DentistList({
   dentists,
@@ -10,7 +11,7 @@ export default function DentistList({
   onCheckAvailability: (dentist: Dentist) => void;
 }) {
   return loading ? (
-    <>Loading dentists...</>
+    <Loading></Loading>
   ) : (
     <>
       <h2 className="my-4">Choose Your Dentist</h2>
@@ -23,7 +24,7 @@ export default function DentistList({
                 <div className="card-text">
                   <h6>Services</h6>
                   <ul>
-                    {dentist.services.map((service) => (
+                    {dentist.services?.map((service) => (
                       <li key={service.id}>{service.name}</li>
                     ))}
                   </ul>

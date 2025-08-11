@@ -1,6 +1,7 @@
 "use client";
 
 import AppointmentModal from "@/components/AppointmentModal";
+import Loading from "@/components/Loading";
 import { useAuth } from "@/context/AuthContext";
 import { authRequest } from "@/lib/api";
 import { Appointment, AppointmentFormValues } from "@/lib/types";
@@ -18,7 +19,7 @@ export default function ManagePage() {
 
   useEffect(() => {
     fetchAppointments();
-  }, [user?.id]);
+  }, []);
 
   const fetchAppointments = async () => {
     setLoading(true);
@@ -124,8 +125,20 @@ export default function ManagePage() {
       <div className="card h-100 shadow-sm p-3 d-flex flex-column">
         <div className="flex-grow-1">
           <h5 className="card-title">
-            {appointment?.slot?.schedule?.dentist?.name ?? "Dentist"}
+            {user?.role === "admin"
+              ? appointment.user.name
+              : appointment?.slot?.schedule?.dentist?.name}
           </h5>
+
+          {user?.role === "admin" ? (
+            <p className="card-text mb-1">
+              <strong>Doctor:</strong>{" "}
+              {appointment?.slot?.schedule?.dentist?.name}
+            </p>
+          ) : (
+            <></>
+          )}
+
           <p className="card-text mb-1">
             <strong>Date:</strong>{" "}
             {appointment?.slot?.schedule?.date
@@ -145,7 +158,7 @@ export default function ManagePage() {
           )}
         </div>
 
-        {isUpcoming && (
+        {user?.role === "client" && isUpcoming && (
           <div className="mt-3 d-flex gap-2 justify-content-end">
             <button
               className="btn btn-sm btn-primary"
@@ -181,7 +194,7 @@ export default function ManagePage() {
   return (
     <div className="container py-4">
       {loading ? (
-        <>Loading appointments...</>
+        <Loading></Loading>
       ) : (
         <>
           <h1 className="mb-4">Upcoming Appointments</h1>

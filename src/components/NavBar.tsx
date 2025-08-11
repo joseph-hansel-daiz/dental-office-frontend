@@ -3,13 +3,17 @@ import { PATHS } from "@/lib/constants";
 import Link from "next/link";
 
 export default function Navbar() {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
 
   const navbarleftSection = isAuthenticated ? (
     <>
-      <Link className="nav-item nav-link" href={PATHS.SCHEDULE}>
-        Schedule
-      </Link>
+      {user?.role === "client" ? (
+        <Link className="nav-item nav-link" href={PATHS.SCHEDULE}>
+          Schedule
+        </Link>
+      ) : (
+        <></>
+      )}
       <Link className="nav-item nav-link" href={PATHS.MANAGE}>
         Manage
       </Link>

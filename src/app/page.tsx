@@ -1,15 +1,34 @@
+"use client";
+
+import { useAuth } from "@/context/AuthContext";
 import { apiRequest } from "@/lib/api";
 import { PATHS } from "@/lib/constants";
 import { Service } from "@/lib/types";
+import { useEffect, useState } from "react";
 
-export default async function Page() {
-  let services: Service[] = [];
+export default function Page() {
+  const { user } = useAuth();
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  try {
-    services = (await apiRequest("/services")) as Service[];
-  } catch (err) {
-    console.error("Failed to load services:", err);
-  }
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
+  const fetchServices = async () => {
+    setLoading(true);
+    try {
+      const data = (await apiRequest("/services")) as Service[];
+      setServices(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to load services:", err);
+      setServices([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isAdmin = user?.role === "admin";
 
   return (
     <section
@@ -30,7 +49,9 @@ export default async function Page() {
           <div className="w-100" style={{ maxWidth: "260px" }}>
             <h4 className="mb-3">Our Services</h4>
             <ul className="list-group list-group-flush text-center">
-              {services.length > 0 ? (
+              {loading ? (
+                <li className="list-group-item text-muted">Loading…</li>
+              ) : services.length > 0 ? (
                 services.map((s) => (
                   <li key={s.id} className="list-group-item">
                     {s.name}
@@ -44,9 +65,11 @@ export default async function Page() {
             </ul>
           </div>
 
-          <a href={PATHS.SCHEDULE} className="btn btn-primary btn-lg mt-4">
-            Schedule an Appointment
-          </a>
+          {!isAdmin && (
+            <a href={PATHS.SCHEDULE} className="btn btn-primary btn-lg mt-4">
+              Schedule an Appointment
+            </a>
+          )}
         </div>
       </div>
     </section>

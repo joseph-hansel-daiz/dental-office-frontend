@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { authRequest } from "@/lib/api";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function ProfilePage() {
   const { login } = useAuth();
