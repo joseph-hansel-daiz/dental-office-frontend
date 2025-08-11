@@ -1,26 +1,58 @@
 "use client";
 
+import { useAuth } from "@/context/AuthContext";
+import { apiRequest } from "@/lib/api";
+import { PATHS } from "@/lib/constants";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const { register } = useAuth();
+
   const [formData, setFormData] = useState({
     email: "",
     name: "",
-    mobile: "",
+    mobileNumber: "",
     address: "",
     password: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((s) => ({ ...s, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Send formData to your backend API
-    console.log("Register form submitted:", formData);
+    setError("");
+    setLoading(true);
+
+    try {
+      const data = await apiRequest("/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+          mobileNumber: formData.mobileNumber,
+          address: formData.address || undefined,
+        }),
+      });
+
+      register(data.token, data.user);
+
+      router.push(PATHS.HOME);
+    } catch (err: any) {
+      setError(err?.message || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -31,8 +63,14 @@ export default function RegisterPage() {
       <div className="card shadow" style={{ maxWidth: "500px", width: "100%" }}>
         <div className="card-body">
           <h2 className="card-title text-center mb-4">Create an Account</h2>
+
+          {error && (
+            <div className="alert alert-danger" role="alert">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="d-flex flex-column gap-3">
-            {/* Email */}
             <div>
               <label htmlFor="email" className="form-label">
                 Email address
@@ -45,10 +83,10 @@ export default function RegisterPage() {
                 value={formData.email}
                 onChange={handleChange}
                 required
+                disabled={loading}
               />
             </div>
 
-            {/* Name */}
             <div>
               <label htmlFor="name" className="form-label">
                 Full Name
@@ -61,26 +99,25 @@ export default function RegisterPage() {
                 value={formData.name}
                 onChange={handleChange}
                 required
+                disabled={loading}
               />
             </div>
 
-            {/* Mobile Number */}
             <div>
-              <label htmlFor="mobile" className="form-label">
+              <label htmlFor="mobileNumber" className="form-label">
                 Mobile Number
               </label>
               <input
                 type="tel"
                 className="form-control"
-                id="mobile"
-                name="mobile"
-                value={formData.mobile}
+                id="mobileNumber"
+                name="mobileNumber"
+                value={formData.mobileNumber}
                 onChange={handleChange}
-                required
+                disabled={loading}
               />
             </div>
 
-            {/* Address */}
             <div>
               <label htmlFor="address" className="form-label">
                 Address
@@ -92,11 +129,10 @@ export default function RegisterPage() {
                 rows={2}
                 value={formData.address}
                 onChange={handleChange}
-                required
-              ></textarea>
+                disabled={loading}
+              />
             </div>
 
-            {/* Password */}
             <div>
               <label htmlFor="password" className="form-label">
                 Password
@@ -109,12 +145,16 @@ export default function RegisterPage() {
                 value={formData.password}
                 onChange={handleChange}
                 required
+                disabled={loading}
               />
             </div>
 
-            {/* Submit */}
-            <button type="submit" className="btn btn-primary w-100">
-              Register
+            <button
+              type="submit"
+              className="btn btn-primary w-100"
+              disabled={loading}
+            >
+              {loading ? "Registering..." : "Register"}
             </button>
           </form>
         </div>

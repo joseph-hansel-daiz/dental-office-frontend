@@ -1,6 +1,16 @@
+import { apiRequest } from "@/lib/api";
 import { PATHS } from "@/lib/constants";
+import { Service } from "@/lib/types";
 
-export default function Page() {
+export default async function Page() {
+  let services: Service[] = [];
+
+  try {
+    services = (await apiRequest("/services")) as Service[];
+  } catch (err) {
+    console.error("Failed to load services:", err);
+  }
+
   return (
     <section
       id="hero"
@@ -17,14 +27,20 @@ export default function Page() {
             your smile healthy and bright.
           </p>
 
-          <div className="w-100" style={{ maxWidth: "200px" }}>
+          <div className="w-100" style={{ maxWidth: "260px" }}>
             <h4 className="mb-3">Our Services</h4>
             <ul className="list-group list-group-flush text-center">
-              <li className="list-group-item">Adjustment</li>
-              <li className="list-group-item">Tooth Filling (Pasta)</li>
-              <li className="list-group-item">Braces</li>
-              <li className="list-group-item">Extraction</li>
-              <li className="list-group-item">Restoration</li>
+              {services.length > 0 ? (
+                services.map((s) => (
+                  <li key={s.id} className="list-group-item">
+                    {s.name}
+                  </li>
+                ))
+              ) : (
+                <li className="list-group-item text-muted">
+                  No services found.
+                </li>
+              )}
             </ul>
           </div>
 

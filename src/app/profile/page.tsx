@@ -1,27 +1,37 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
+import { authRequest } from "@/lib/api";
 import { useState, useEffect } from "react";
 
 export default function ProfilePage() {
-  const { user, token, login } = useAuth();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     name: "",
-    mobile: "",
+    mobileNumber: "",
     address: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (user) {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const data = await authRequest("/users/me");
       setFormData({
-        email: user.email,
-        name: user.name,
-        mobile: user.mobile || "",
-        address: user.address || "",
+        email: data.email,
+        name: data.name,
+        mobileNumber: data.mobileNumber || "",
+        address: data.address || "",
       });
+    } catch (err) {
+      console.error(err);
     }
-  }, [user]);
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -29,16 +39,28 @@ export default function ProfilePage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setMessage("");
 
-    const updatedUser = {
-      ...user,
-      mobile: formData.mobile,
-      address: formData.address,
-    };
-    // login(token, updatedUser);
-    alert("Profile updated successfully!");
+    try {
+      const updatedUser = await authRequest("/users/me", {
+        method: "PUT",
+        body: JSON.stringify({
+          name: formData.name,
+          mobileNumber: formData.mobileNumber,
+          address: formData.address,
+        }),
+      });
+
+      login(localStorage.getItem("authToken")!, updatedUser);
+      setMessage("Profile updated successfully!");
+    } catch (err: any) {
+      setMessage(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -48,6 +70,17 @@ export default function ProfilePage() {
     >
       <div className="w-100" style={{ maxWidth: "500px" }}>
         <h2 className="mb-4 text-center">My Profile</h2>
+
+        {message && (
+          <div
+            className={`alert ${
+              message.includes("success") ? "alert-success" : "alert-danger"
+            }`}
+          >
+            {message}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="d-flex flex-column gap-3">
           {/* Email */}
           <div>
@@ -71,9 +104,10 @@ export default function ProfilePage() {
             <input
               type="text"
               id="name"
+              name="name"
               className="form-control"
               value={formData.name}
-              readOnly
+              onChange={handleChange}
             />
           </div>
 
@@ -84,10 +118,10 @@ export default function ProfilePage() {
             </label>
             <input
               type="tel"
-              id="mobile"
-              name="mobile"
+              id="mobileNumber"
+              name="mobileNumber"
               className="form-control"
-              value={formData.mobile}
+              value={formData.mobileNumber}
               onChange={handleChange}
             />
           </div>
@@ -107,8 +141,8 @@ export default function ProfilePage() {
             ></textarea>
           </div>
 
-          <button type="submit" className="btn btn-primary">
-            Save Changes
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? "Saving..." : "Save Changes"}
           </button>
         </form>
       </div>

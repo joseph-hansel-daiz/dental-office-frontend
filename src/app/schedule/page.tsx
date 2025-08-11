@@ -1,8 +1,9 @@
 "use client";
 
-import AppointmentCreationModal from "@/components/AppointmentCreationModal";
+import AppointmentModal from "@/components/AppointmentModal";
 import DentistList from "@/components/DentistList";
-import { AppointmentFormValues, Dentist, Service, Slot } from "@/lib/types";
+import { apiRequest, authRequest } from "@/lib/api";
+import { AppointmentFormValues, Dentist } from "@/lib/types";
 import { useEffect, useState } from "react";
 
 export default function SchedulePage() {
@@ -10,6 +11,7 @@ export default function SchedulePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dentists, setDentists] = useState<Dentist[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDentists();
@@ -17,21 +19,19 @@ export default function SchedulePage() {
 
   const fetchDentists = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
-      const res = await fetch(`http://localhost:8000/api/dentist/dentists`);
-      if (!res.ok) throw new Error("Failed to fetch dentists");
-      const dentistsJson = await res.json();
+      const dentistsJson = await apiRequest("/dentists?includeServices=true");
       setDentists(
-        dentistsJson.map((dentist: any) => {
-          return {
-            id: dentist.id,
-            name: dentist.name,
-            services: dentist.services,
-          };
-        })
+        (dentistsJson as any[]).map((dentist) => ({
+          id: dentist.id,
+          name: dentist.name,
+          services: dentist.services ?? [],
+        }))
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setLoadError(err?.message || "Failed to load dentists");
       setDentists([]);
     } finally {
       setLoading(false);
@@ -40,22 +40,18 @@ export default function SchedulePage() {
 
   const onSubmit = async (values: AppointmentFormValues) => {
     try {
-      const res = await fetch(
-        `http://localhost:8000/api/dentist/appointments/`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            client_id: 1,
-            slot_id: values.slot.id,
-            service_id: values.service.id,
-            notes: values.notes,
-          }),
-        }
-      );
+      await authRequest("/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slotId: values.slot.id,
+          serviceId: values.service.id,
+          notes: values.notes,
+        }),
+      });
 
-      if (!res.ok) throw new Error("Failed to schedule appointment");
       alert("Appointment scheduled!");
+      closeModal();
     } catch (err) {
       console.error(err);
       alert("Failed to schedule appointment");
@@ -75,15 +71,21 @@ export default function SchedulePage() {
   return (
     <div className="container py-4">
       <h1 className="text-center">Schedule an appointment</h1>
+
+      {loadError && (
+        <div className="alert alert-danger my-3" role="alert">
+          {loadError}
+        </div>
+      )}
+
       <DentistList
         dentists={dentists}
         loading={loading}
         onCheckAvailability={openModal}
-      ></DentistList>
+      />
 
-      {/* Availability Modal */}
-      {isModalOpen && (
-        <AppointmentCreationModal
+      {isModalOpen && selectedDentist && (
+        <AppointmentModal
           dentist={selectedDentist}
           onClose={closeModal}
           onSubmit={onSubmit}

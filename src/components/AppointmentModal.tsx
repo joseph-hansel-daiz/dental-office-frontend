@@ -7,9 +7,10 @@ import {
   Service,
   Slot,
 } from "@/lib/types";
+import { authRequest } from "@/lib/api";
 import { JSX, useEffect, useState } from "react";
 
-export default function AppointmentCreationModal({
+export default function AppointmentModal({
   dentist,
   onClose,
   onSubmit,
@@ -24,30 +25,38 @@ export default function AppointmentCreationModal({
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [clientNotes, setClientNotes] = useState("");
 
+  const toLocalYMD = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
   useEffect(() => {
     if (!dentist) return;
 
     const fetchSchedules = async () => {
       setLoading(true);
+      setLoadError(null);
       try {
         const month = currentMonth.getMonth() + 1;
         const year = currentMonth.getFullYear();
 
-        const res = await fetch(
-          `http://localhost:8000/api/dentist/dentists/${dentist.id}/schedules/?month=${month}&year=${year}`
+        const data: Schedule[] = await authRequest(
+          `/schedules?dentistId=${dentist.id}&month=${month}&year=${year}&includeSlots=true`
         );
-        if (!res.ok) throw new Error("Failed to load schedules");
 
-        const data: Schedule[] = await res.json();
-        setSchedules(data);
-      } catch (err) {
+        setSchedules(Array.isArray(data) ? data : []);
+      } catch (err: any) {
         console.error(err);
+        setLoadError(err?.message || "Failed to load schedules");
         setSchedules([]);
       } finally {
         setLoading(false);
@@ -56,6 +65,10 @@ export default function AppointmentCreationModal({
 
     fetchSchedules();
   }, [dentist, currentMonth]);
+
+  useEffect(() => {
+    resetModal();
+  }, [dentist?.id]);
 
   const getDaysInMonth = (date: Date) =>
     new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -76,17 +89,16 @@ export default function AppointmentCreationModal({
   };
 
   const slotInfoForDate = (date: Date) => {
-    const scheduleForDate = schedules.find(
-      (sch) => new Date(sch.date).toDateString() === date.toDateString()
-    );
+    const ymd = toLocalYMD(date);
+    const scheduleForDate = schedules.find((sch) => sch.date === ymd);
 
     if (!scheduleForDate) {
       return { exists: false, booked: 0, total: 0, timeSlots: [] as Slot[] };
     }
 
-    const slots = scheduleForDate.slots || [];
+    const slots = scheduleForDate.slots ?? [];
     const total = slots.length;
-    const booked = slots.filter((s) => s.appointment).length;
+    const booked = slots.filter((s: any) => s.appointment).length;
 
     return {
       exists: true,
@@ -175,6 +187,10 @@ export default function AppointmentCreationModal({
 
       {loading ? (
         <div className="text-center py-5">Loading availability...</div>
+      ) : loadError ? (
+        <div className="alert alert-danger" role="alert">
+          {loadError}
+        </div>
       ) : (
         <div className="table-responsive">
           <table className="table table-bordered text-center align-middle">
@@ -222,9 +238,7 @@ export default function AppointmentCreationModal({
                         {day}
                         <div
                           className={`${disabled ? "text-muted" : "fw-bold"}`}
-                          style={{
-                            fontSize: "0.75rem",
-                          }}
+                          style={{ fontSize: "0.75rem" }}
                         >
                           {!slotInfo.exists
                             ? "No schedule"
@@ -272,7 +286,7 @@ export default function AppointmentCreationModal({
               }}
               disabled={!!slot.appointment}
             >
-              {slot.slot_option.name}
+              {slot.slotOption.name}
             </button>
           );
         })}
@@ -282,11 +296,11 @@ export default function AppointmentCreationModal({
 
   const servicesPage = (
     <div className="d-flex flex-column gap-2">
-      {dentist.services.map((service) => (
+      {(dentist.services || []).map((service) => (
         <button
           key={service.id}
           className={`btn btn-outline-primary ${
-            selectedService === service ? "active" : ""
+            selectedService?.id === service.id ? "active" : ""
           }`}
           onClick={() => {
             setSelectedService(service);
@@ -308,7 +322,7 @@ export default function AppointmentCreationModal({
         <strong>Date:</strong> {selectedDate?.toDateString()}
       </p>
       <p>
-        <strong>Time:</strong> {selectedSlot?.slot_option.name}
+        <strong>Time:</strong> {selectedSlot?.slotOption.name}
       </p>
       <p>
         <strong>Service:</strong> {selectedService?.name}

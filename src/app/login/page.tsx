@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { apiRequest } from "@/lib/api";
 import { PATHS } from "@/lib/constants";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,14 +19,19 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
+
     try {
-      login("sample-token", {
-        email: "test@test.com",
-        name: "Joseph Hansel Daiz",
+      const data = await apiRequest("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
+
+      login(data.token, data.user);
+
       router.push(PATHS.HOME);
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Invalid credentials");
+      setError(err?.message || "Login failed");
     } finally {
       setLoading(false);
     }
@@ -33,11 +40,13 @@ export default function LoginPage() {
   return (
     <div className="container" style={{ maxWidth: "500px", marginTop: "5rem" }}>
       <h2 className="mb-4 text-center">Login to Your Account</h2>
+
       {error && (
         <div className="alert alert-danger" role="alert">
           {error}
         </div>
       )}
+
       <form onSubmit={handleSubmit} className="card p-4 shadow-sm">
         <div className="mb-3">
           <label htmlFor="email" className="form-label">
@@ -50,7 +59,9 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
+            autoComplete="email"
             required
+            disabled={loading}
           />
         </div>
 
@@ -65,7 +76,9 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
+            autoComplete="current-password"
             required
+            disabled={loading}
           />
         </div>
 
@@ -77,8 +90,9 @@ export default function LoginPage() {
           {loading ? "Logging in..." : "Login"}
         </button>
       </form>
+
       <p className="text-center mt-3">
-        Don&apos;t have an account?{" "}
+        Don't have an account?{" "}
         <a href={PATHS.REGISTER} className="text-decoration-none">
           Register
         </a>
