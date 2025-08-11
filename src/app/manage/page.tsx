@@ -89,9 +89,8 @@ export default function ManagePage() {
     return date;
   };
 
-  const now = new Date();
-
   const [upcomingAppointments, pastAppointments] = useMemo(() => {
+    const now = new Date();
     const upcoming: Appointment[] = [];
     const past: Appointment[] = [];
 

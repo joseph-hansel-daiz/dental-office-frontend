@@ -56,8 +56,10 @@ export default function ProfilePage() {
 
       login(localStorage.getItem("authToken")!, updatedUser);
       setMessage("Profile updated successfully!");
-    } catch (err: any) {
-      setMessage(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setMessage(err.message);
+      }
     } finally {
       setLoading(false);
     }

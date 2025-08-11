@@ -55,10 +55,12 @@ export default function AppointmentModal({
         );
 
         setSchedules(Array.isArray(data) ? data : []);
-      } catch (err: any) {
-        console.error(err);
-        setLoadError(err?.message || "Failed to load schedules");
-        setSchedules([]);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          console.error(err);
+          setLoadError(err?.message || "Failed to load schedules");
+          setSchedules([]);
+        }
       } finally {
         setLoading(false);
       }
@@ -99,7 +101,7 @@ export default function AppointmentModal({
 
     const slots = scheduleForDate.slots ?? [];
     const total = slots.length;
-    const booked = slots.filter((s: any) => s.appointment).length;
+    const booked = slots.filter((s: Slot) => s.appointment).length;
 
     return {
       exists: true,

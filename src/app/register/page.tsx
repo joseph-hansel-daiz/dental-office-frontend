@@ -48,8 +48,10 @@ export default function RegisterPage() {
       register(data.token, data.user);
 
       router.push(PATHS.HOME);
-    } catch (err: any) {
-      setError(err?.message || "Registration failed");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err?.message || "Registration failed");
+      }
     } finally {
       setLoading(false);
     }

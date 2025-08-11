@@ -22,16 +22,12 @@ export default function SchedulePage() {
     setLoadError(null);
     try {
       const dentistsJson = await apiRequest("/dentists?includeServices=true");
-      setDentists(
-        (dentistsJson as any[]).map((dentist) => ({
-          id: dentist.id,
-          name: dentist.name,
-          services: dentist.services ?? [],
-        }))
-      );
-    } catch (err: any) {
-      console.error(err);
-      setLoadError(err?.message || "Failed to load dentists");
+      setDentists(dentistsJson);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err);
+        setLoadError(err?.message || "Failed to load dentists");
+      }
       setDentists([]);
     } finally {
       setLoading(false);

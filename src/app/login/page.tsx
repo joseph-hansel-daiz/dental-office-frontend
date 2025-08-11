@@ -30,8 +30,10 @@ export default function LoginPage() {
       login(data.token, data.user);
 
       router.push(PATHS.HOME);
-    } catch (err: any) {
-      setError(err?.message || "Login failed");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err?.message || "Login failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -92,7 +94,7 @@ export default function LoginPage() {
       </form>
 
       <p className="text-center mt-3">
-        Don't have an account?{" "}
+        Don&apos;t have an account?{" "}
         <a href={PATHS.REGISTER} className="text-decoration-none">
           Register
         </a>
