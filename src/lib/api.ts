@@ -1,5 +1,3 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
 function getToken() {
   if (typeof window !== "undefined") {
     return localStorage.getItem("authToken");
@@ -71,7 +69,7 @@ async function parseResponse(res: Response) {
 export async function apiRequest(endpoint: string, options: RequestInit = {}) {
   const finalOptions = prepareOptions(options);
 
-  const res = await fetch(`${API_URL}${endpoint}`, finalOptions);
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, finalOptions);
 
   if (!res.ok) {
     let errorMessage = "API request failed";
